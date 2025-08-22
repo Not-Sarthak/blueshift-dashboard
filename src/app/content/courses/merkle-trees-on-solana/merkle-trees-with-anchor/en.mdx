@@ -2,124 +2,187 @@ import { ArticleSection } from "../../../../components/ArticleSection/ArticleSec
 
 # Merkle Trees with Anchor
 
-[Dean](https://x.com/deanmlittle) from the Blueshift team has released a crate that enables efficient Merkle Tree creation and verification for Anchor.
+[Dean](https://x.com/deanmlittle) from the Blueshift team has released a crate that enables efficient Merkle Tree creation and verification for Anchor programs.
 
-<ArticleSection name="Introduction" id="introduction" level="h2" />
+Merkle trees provide a cryptographically secure way to efficiently verify that specific data belongs to a larger dataset without storing the entire dataset on-chain. 
 
-The SDK provides clean abstractions through core data structures:
+This makes them perfect for applications like airdrops, whitelists, and other scenarios where you need to prove membership in a large set while minimizing on-chain storage costs.
 
-```rust
-// 33-byte compressed public key (1 byte parity + 32 byte x-coordinate)
-pub type Secp256r1Pubkey = [u8; 33];
-// 64-byte signature (r,s values)
-pub type Secp256r1Signature = [u8; 64];
+<ArticleSection name="Client Side Integration" id="client-side-integration" level="h2" />
 
-// Main instruction parser
-pub struct Secp256r1Instruction<'a> {
-    header: Secp256r1InstructionHeader,    // Number of signatures
-    offsets: &'a [Secp256r1SignatureOffsets], // Data location pointers
-    data: &'a [u8],                        // Raw instruction data
+The heavy computational work of creating trees, updating trees and generating proofs happens client-side.
+
+Let's start by adding the `svm-merkle-tree` package to our project:
+
+```
+npm i svm-merkle-tree
+```
+
+### Creating a Tree
+
+All data must be converted to buffers that match Solana's byte reading and writing conventions. For this example, we'll use an airdrop state structure:
+
+```ts
+interface AirdropTokenData {
+    address: PublicKey;
+    amount: number;
+    isClaimed: boolean;
+}
+
+let merkleTreeData: AirdropTokenData = {
+    address: Keypair.generate().publicKey,
+    amount: Math.floor(Math.random() * 1000),
+    isClaimed: false,
+};
+```
+
+Create a new Merkle tree and add leaves (individual data entries):
+
+```ts
+let merkleTree: MerkleTree;
+
+// Initialize with Keccak hashing and 32-byte hash size
+merkleTree = new MerkleTree(HashingAlgorithm.Keccak, 32);
+
+// Serialize the data into a buffer format Solana can process
+merkleTree.add_leaf(Buffer.concat([
+    entry.address.toBuffer(),
+    Buffer.from(new Uint8Array(new anchor.BN(entry.amount).toArray('le', 8))),
+    Buffer.from([entry.isClaimed ? 1 : 0]),
+]));
+```
+
+After adding all your data, transform the raw entries into a proper Merkle tree structure and extract the root hash:
+
+```ts
+merkleTree.merklize();
+const merkleRoot = merkleTree.get_merkle_root();
+```
+
+### Updating a Tree
+
+Tree updates follow the same pattern as creation. Add new data as leaves, rebuild the tree structure, and extract the new root:
+
+```ts
+// Add the new entry
+merkleTree.add_leaf(Buffer.concat([
+    entry.address.toBuffer(),
+    Buffer.from(new Uint8Array(new anchor.BN(entry.amount).toArray('le', 8))),
+    Buffer.from([entry.isClaimed ? 1 : 0]),
+]));
+
+// Rebuild the tree structure with the new data
+merkleTree.merklize();
+const newMerkleRoot = merkleTree.get_merkle_root();
+```
+
+### Generate a Proof
+
+Proofs require the index position of your data within the tree. Since your Merkle tree data is typically stored in a database, you'll search for the specific entry (often by wallet address) to find its index:
+
+```ts
+let merkleTreeData: AirdropTokenData[];
+
+const index = merkleTreeData.findIndex(data => data.address.equals(targetAddress.publicKey));
+if (index === -1) {
+    throw new Error("Address not found in Merkle tree data");
 }
 ```
 
-The `Secp256r1SignatureOffsets` struct acts as a memory map, containing byte offsets that point to where each component lives within the instruction payload:
+Generate the cryptographic proof that demonstrates the data belongs to the tree:
+
+```ts
+const proof = merkleTree.merkle_proof_index(index);
+const proofArray = proof.get_pairing_hashes();
+```
+
+The proof consists of sibling hashes along the path from your leaf to the root. The verifier can use these hashes to reconstruct the path and confirm the data's membership in the tree.
+
+<ArticleSection name="Program Side Integration" id="program-side-integration" level="h2" />
+
+On the program side, we focus exclusively on updating and verifying Merkle roots.
+
+Let's start by adding the `svm-merkle-tree` crate to our project:
+
+```
+cargo add svm_merkle_tree
+```
+
+### Store the Root On-Chain
+
+Create an account structure to store the Merkle root and designate an authority for future updates:
 
 ```rust
-pub struct Secp256r1SignatureOffsets {
-    pub signature_offset: u16,
-    pub signature_instruction_index: u16,
-    pub public_key_offset: u16,
-    pub public_key_instruction_index: u16,
-    pub message_data_offset: u16,
-    pub message_data_size: u16,
-    pub message_instruction_index: u16,
+#[account]
+pub struct AirdropState {
+    pub merkle_root: [u8; 32],
+    pub authority: Pubkey,
+    pub bump: u8,
 }
 ```
 
-In the data, we find the three critical components referenced by the offset structure:
-- Publickey: The 33-byte compressed `Secp256r1` public key. When used with modern authentication methods like passkeys, this represents the cryptographic identity of the authenticating device/user.
-- Signature: The 64-byte `ECDSA` signature (r,s values) generated by the private key. This proves that the holder of the corresponding private key authorized the specific message.
-- Message Data: The arbitrary bytes that were cryptographically signed. In practice, this contains application-specific data like transaction details, timestamps, or user identifiers that prevent replay attacks and ensure signatures are contextually bound.
+This account serves as the single source of truth for your Merkle tree's current state, allowing efficient verification without storing the entire dataset on-chain.
 
-As you can see, the publickey is 33 byte long because it uses a compressed point representation; a space-efficient encoding of elliptic curve points. 
+### Verify the Root onchain
 
-On Secp256r1, a public key is mathematically a point (x,y) where both coordinates are 32 bytes (64 bytes total).
-
-However, given any x-coordinate, only two possible y-coordinates satisfy the curve equation. 
-
-The compressed format stores the 32-byte x-coordinate plus a single parity byte (0x02 for even y, 0x03 for odd y), allowing full point reconstruction with 48% less storage.
-
-<ArticleSection name="Implementation" id="implementation" level="h2" />
-
-To verify `Secp256r1` signatures, we need two main components:
-1. The instruction sysvar: This allows us to introspect the `Secp256r1` signature
-2. The `pinocchio-secp256r1-instruction` crate: This provides the tools to deserialize the instruction
-
-The instruction sysvar is already included in the Pinocchio crate, so no additional installation is needed. 
-
-However, we need to add the `pinocchio-secp256r1-instruction` crate to our Pinocchio program:
-
-```
-cargo add pinocchio-secp256r1-instruction
-```
-
-To implement the verification, we need to:
-1. Include the Instruction Sysvar program (`Sysvar1nstructions1111111111111111111111111`, which we'll refer to as `instructions`)
-2. Place the `Secp256r1` instruction after our current instruction
-
-Here's how to access and deserialize the instructions:
+For verification operations (like checking airdrop eligibility), we reconstruct the original leaf from on-chain data and verify it matches the stored root:
 
 ```rust
-// Deserialize the instructions sysvar
-let instructions: Instructions<Ref<[u8]>> = Instructions::try_from(self.accounts.instructions)?;
-// Get the instruction that follows our current one
-let ix: IntrospectedInstruction = instructions.get_instruction_relative(1)?;
+// Step 1: Create a Merkle proof from client-provided data
+let merkle_proof = MerkleProof::new(
+    HashingAlgorithm::Keccak,
+    32,
+    index as u32,
+    hashes.clone(),
+);
+
+// Step 2: Reconstruct the original leaf from on-chain data for security
+// This prevents clients from manipulating the verification data
+let mut original_leaf = Vec::new();
+original_leaf.extend_from_slice(&ctx.accounts.signer.key().to_bytes());
+original_leaf.extend_from_slice(&amount.to_le_bytes());
+original_leaf.push(0u8); // isClaimed = false (original state)
+
+// Step 3: Compute the root using the reconstructed leaf and proof
+let computed_root = merkle_proof
+    .merklize(&original_leaf)
+    .map_err(|_| WhitelistError::InvalidProof)?;
+
+// Step 4: Verify against the stored on-chain root
+require!(
+    computed_root.eq(&airdrop_state.merkle_root),
+    WhitelistError::InvalidProof
+);
 ```
 
-Next, we deserialize the `Secp256r1` instruction:
+### Update the Root On-Chain
+
+For state-changing operations (like claiming an airdrop), we update the leaf data and recalculate the root:
 
 ```rust
-// Deserialize the Secp256r1 instruction
-let secp256r1_ix = Secp256r1Instruction::try_from(&ix)?;
+// Step 1: Create a Merkle proof from client-provided data
+let merkle_proof = MerkleProof::new(
+    HashingAlgorithm::Keccak,
+    32,
+    index as u32,
+    hashes.clone(),
+);
+
+// Step 2: Create the updated leaf with the new claimed status
+let mut updated_leaf = Vec::new();
+updated_leaf.extend_from_slice(&ctx.accounts.signer.key().to_bytes());
+updated_leaf.extend_from_slice(&amount.to_le_bytes());
+updated_leaf.push(1u8); // isClaimed = true (updated state)
+
+// Step 3: Recompute the root with the updated leaf data
+let updated_root: [u8; 32] = merkle_proof
+    .merklize(&updated_leaf)
+    .map_err(|_| WhitelistError::InvalidProof)?
+    .try_into()
+    .map_err(|_| WhitelistError::InvalidProof)?;
+
+// Step 4: Store the new root in the airdrop state
+airdrop_state.merkle_root = updated_root;
 ```
 
-We then perform some security checks.
-
-It's crucial to implement several security checks:
-1. **Authority Check**: Ensures that only authorized recipients can receive funds from the PDA that wraps the Secp256r1 public key. This prevents MEV attacks where someone could intercept the transaction, capture the valid signature, and replace the intended recipient.
-2. **Expiry Check**: Enforces a time limit on signature validity. Since validated signatures remain valid indefinitely, implementing an expiry timestamp prevents replay attacks.
-
-We perform these checks by putting this data in the message of the signature.
-
-Here's how to implement these security checks:
-
-```rust
-// Verify the fee payer is authorized
-let (receiver, expiry) = secp256r1_ix.get_message_data(0)?.split_at_checked(32).ok_or(ProgramError::InvalidInstructionData)?;
-if self.accounts.payer.key().ne(payer) {
-    return Err(ProgramError::InvalidAccountOwner);
-}
-
-// Check signature expiration
-let now = Clock::get()?.unix_timestamp;
-let expiry = i64::from_le_bytes(expiry.try_into().map_err(|_| ProgramError::InvalidInstructionData)?);
-if now > expiry {
-    return Err(ProgramError::InvalidInstructionData);
-}
-```
-
-Finally, we can derive Program Derived Addresses (PDAs) directly from Secp256r1 public keys, creating deterministic account addresses that users can control through modern authentication methods:
-
-```rust
-// Verify the first signature matches our PDA owner
-let signer: Secp256r1Pubkey = *secp256r1_ix.get_signer(0)?;
-// Create signer seeds for CPI
-let seeds = [
-    Seed::from(signer[..1].as_ref()),
-    Seed::from(signer[1..].as_ref()),
-];
-let signers = [Signer::from(&seeds)];
-```
-
-> We need to split the pubkey in 2 different parts because seeds accept 32 bytes as maximum length.
-
+> Always reconstruct leaf data from trusted on-chain sources rather than accepting client-provided leaf data. This prevents malicious clients from manipulating the verification process by providing false data about their eligibility or claim status.
