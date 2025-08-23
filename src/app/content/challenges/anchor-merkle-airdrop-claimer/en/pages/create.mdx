@@ -60,8 +60,8 @@ First, we populate the `AirdropState` using the `set_inner()` method, then mint 
 
 <Codeblock lang="rust">
 ```rust
-impl<'info> Make<'info> {
-    /// # Create the Escrow
+impl<'info> Create<'info> {
+    /// # Create the Airdrop State
     fn populate_airdrop_state(&mut self, merkle_root: [u8; 32], amount: u64, bump: u8) -> Result<()> {
         self.airdrop_state.set_inner(
             AirdropState {
@@ -103,7 +103,7 @@ Finally, we create the handler function that orchestrates these helper methods:
 ```rust
 pub fn handler(ctx: Context<Create>, merkle_root: [u8; 32], amount: u64) -> Result<()> {
     // Save the AirdropState Data
-    ctx.accounts.populate_airdrop_state(merkle_root: [u8; 32], amount: u64, ctx.bumps.airdrop_state)?;
+    ctx.accounts.populate_airdrop_state(merkle_root:, amount, ctx.bumps.airdrop_state)?;
 
     // Mint Tokens
     ctx.accounts.mint_tokens(amount)?;
