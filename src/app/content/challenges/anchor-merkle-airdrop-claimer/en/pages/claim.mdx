@@ -90,7 +90,7 @@ impl<'info> Claim<'info> {
             .map_err(|_| AirdropError::InvalidProof)?;
 
         require!(
-            computed_root.eq(&airdrop_state.merkle_root),
+            computed_root.eq(&self.airdrop_state.merkle_root),
             AirdropError::InvalidProof
         );
 
@@ -181,13 +181,13 @@ pub fn handler(ctx: Context<Claim>, amount: u64, hashes: Vec<u8>, index: u64) ->
     );
 
     // Verify the Merkle Proof
-    ctx.accounts.verify_merkle_proof(amount, hashes, index)
+    ctx.accounts.verify_merkle_proof(amount, hashes, index)?;
 
     // Transfer Tokens
     ctx.accounts.transfer_tokens(amount)?;
 
     // Create the airdrop_receipt account
-    create_airdrop_receipt(ctx.bumps.airdrop_receipt)
+    create_airdrop_receipt(ctx.bumps.airdrop_receipt)?;
 
     Ok(())
 }

@@ -14,7 +14,7 @@ The accounts needed in this context are:
 - `airdrop_state`: PDA that stores the airdrop configuration and merkle tree root
 - `vault`: Associated token account that holds the tokens to be distributed
 - `authority`: The signer who has permission to create the airdrop and mint tokens
-- `system_program`: The system program used to create the `Escrow`
+- `system_program`: The system program used to create the `AirdropState`
 - `token_program`: The token program used to CPI the transfer
 - `associated_token_program`: The associated token program used to create the associated token accounts
 
@@ -103,7 +103,7 @@ Finally, we create the handler function that orchestrates these helper methods:
 ```rust
 pub fn handler(ctx: Context<Create>, merkle_root: [u8; 32], amount: u64) -> Result<()> {
     // Save the AirdropState Data
-    ctx.accounts.populate_airdrop_state(merkle_root:, amount, ctx.bumps.airdrop_state)?;
+    ctx.accounts.populate_airdrop_state(merkle_root, amount, ctx.bumps.airdrop_state)?;
 
     // Mint Tokens
     ctx.accounts.mint_tokens(amount)?;

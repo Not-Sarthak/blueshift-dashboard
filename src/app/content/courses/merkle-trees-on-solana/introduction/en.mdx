@@ -61,7 +61,7 @@ To create a tree you would need to:
 
 > The pairing is done sequentially from left to right so the tree structure is reproducible by anyone with the same input data and to make addition more efficient (you need to reconstruct only one path).
 
-3. Deal with odd numbers of nodes: it might happens that the number of nodes at any level is odd, making it "impossible" to pair it with another leaf. We can solve this by duplicating the last element to make pairs or by adding empty/null nodes with predefined hash values.
+3. Deal with odd numbers of nodes: it might happen that the number of nodes at any level is odd, making it "impossible" to pair it with another leaf. We can solve this by duplicating the last element to make pairs or by adding empty/null nodes with predefined hash values.
 
 ### Merkle Proofs
 
@@ -116,13 +116,13 @@ The verification for the leaf C would look like this:
 2. Reconstruct the root: `computed_root = H(H(A,B), H(C,D))` -> is `computed_root == R`?
 3. Verify: `if (computed_root != R) { err }`
 
-<ArticleSection name="Merkle Trees on Solana" id="merkle-tress-on-solana" level="h2" />
+<ArticleSection name="Merkle Trees on Solana" id="merkle-trees-on-solana" level="h2" />
 
 Solana's account-based architecture presents unique challenges for storing large datasets on-chain. Every piece of data requires rent payments, and storing millions of user records directly on-chain becomes prohibitively expensive. 
 
-Merkle trees solve this fundamental scalability problem through compressed accounts: nstead of creating individual accounts for each piece of data, compressed accounts store thousands or millions of data elements as leaves in a Merkle tree, with only the root hash and tree structure living on-chain.
+Merkle trees solve this fundamental scalability problem through compressed accounts: instead of creating individual accounts for each piece of data, compressed accounts store thousands or millions of data elements as leaves in a Merkle tree, with only the root hash and tree structure living on-chain.
 
-Everytime a compressed account is created, it's transaction data is picked up by an RPC and stored in a database so it can be looked up by anyone to create a proof permissionlessly.
+Everytime a compressed account is created, its transaction data is picked up by an RPC and stored in a database so it can be looked up by anyone to create a proof permissionlessly.
 
 ### Concurrent Merkle Trees
 
