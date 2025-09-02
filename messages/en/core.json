@@ -157,5 +157,9 @@
     "unsaved_changes": "Unsaved changes",
     "saving": "Saving...",
     "loaded_from_auto_save": "Code loaded from previous session"
+  },
+  "marketing_banner": {
+    "title": "Consider staking to help improve Blueshift",
+    "button": "Stake"
   }
 }

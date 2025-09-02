@@ -25,7 +25,7 @@ export interface ButtonProps {
   variant?: ButtonVariant;
   icon?: IconName;
   iconSide?: "left" | "right";
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   iconSize?: 18 | 14 | 12 | 8;
 }
 
@@ -52,6 +52,8 @@ export default function Button({
 
         // Sizes
         {
+          "px-2 py-1 !text-[11px] leading-none rounded-md font-medium":
+            size === "xs",
           "px-2 py-1 rounded-xl text-xs leading-none": size === "sm",
           "px-4.5 py-3 rounded-xl text-sm leading-none": size === "md",
           "px-6 py-4 rounded-2xl text-base leading-none": size === "lg",

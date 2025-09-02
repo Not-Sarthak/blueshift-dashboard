@@ -3,10 +3,12 @@ import Modal from "./Modal";
 import { useStore, usePersistentStore } from "@/stores/store";
 import { useTranslations } from "next-intl";
 import Button from "../Button/Button";
+import classNames from "classnames";
 export default function ConnectWalletRecommended() {
   const t = useTranslations();
   const { openedModal, closeModal } = useStore();
   const { setConnectionRecommendedViewed } = usePersistentStore();
+  const { marketingBannerViewed } = usePersistentStore();
 
   return (
     <Modal
@@ -16,7 +18,9 @@ export default function ConnectWalletRecommended() {
       showBackdrop={true}
       width={360}
       closeOnClickOutside={false}
-      cardClassName="!top-20"
+      cardClassName={classNames("!top-20", {
+        "sm:!top-32 !top-36": !marketingBannerViewed,
+      })}
     >
       <div className="flex flex-col gap-y-8">
         <div className="flex flex-col gap-y-2 text-center">

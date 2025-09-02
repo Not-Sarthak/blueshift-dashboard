@@ -14,6 +14,7 @@ import { FlagIcon } from "./Flag";
 import { FlameIcon } from "./Flame";
 import { GithubIcon } from "./Github";
 import { GridViewIcon } from "./GridView";
+import { HeartIcon } from "./Heart";
 import { LessonsIcon } from "./Lessons";
 import { LinkIcon } from "./Link";
 import { ListViewIcon } from "./ListView";
@@ -72,6 +73,7 @@ export const IconComponents = {
   Rewards: RewardsIcon,
   Refresh: RefreshIcon,
   General: ShiftArrowIcon,
+  Heart: HeartIcon,
   Rust: RustIcon,
   Search: SearchIcon,
   ShiftArrow: ShiftArrowIcon,
