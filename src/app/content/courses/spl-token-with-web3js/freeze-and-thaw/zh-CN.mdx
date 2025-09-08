@@ -19,11 +19,11 @@ import { ArticleSection } from "../../../../components/ArticleSection/ArticleSec
 仅使用“原始”指令而不进行任何抽象，冻结代币的操作如下：
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

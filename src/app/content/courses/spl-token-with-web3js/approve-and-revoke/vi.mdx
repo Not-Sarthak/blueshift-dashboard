@@ -21,11 +21,11 @@ Trước khi chúng ta có thể delegate hoặc revoke bất kỳ token account
 Bằng cách chỉ sử dụng instruction "thô" mà không có bất kỳ abstraction nào, approve token:
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

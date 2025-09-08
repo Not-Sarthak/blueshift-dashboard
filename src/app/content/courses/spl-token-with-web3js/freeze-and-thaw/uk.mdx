@@ -19,11 +19,11 @@ import { ArticleSection } from "../../../../components/ArticleSection/ArticleSec
 Використовуючи лише "сиру" інструкцію без будь-якої абстракції, заморожування токена виглядатиме так:
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

@@ -21,11 +21,11 @@ Bevor wir ein Token-Konto delegieren oder widerrufen können, müssen wir bereit
 Bei Verwendung einer "rohen" Anweisung ohne Abstraktion würde die Genehmigung eines Tokens so aussehen:
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

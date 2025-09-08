@@ -19,11 +19,11 @@ Before we can freeze and thaw any token, we'll need to already have:
 By using just "raw" instruction without any abstraction, this is how freezing a token would look like:
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

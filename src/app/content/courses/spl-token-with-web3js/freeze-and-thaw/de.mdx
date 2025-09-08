@@ -19,11 +19,11 @@ Bevor wir einen Token einfrieren und auftauen können, benötigen wir bereits:
 Bei Verwendung einer "rohen" Anweisung ohne Abstraktion würde das Einfrieren eines Tokens so aussehen:
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

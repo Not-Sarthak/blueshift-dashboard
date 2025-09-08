@@ -19,11 +19,11 @@ Trước khi chúng ta có thể freeze và thaw bất kỳ token nào, chúng t
 Bằng cách chỉ sử dụng instruction "thô" mà không có bất kỳ abstraction nào, đây là cách freeze token sẽ trông như thế nào:
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

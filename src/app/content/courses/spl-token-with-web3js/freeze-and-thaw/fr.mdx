@@ -19,11 +19,11 @@ Avant de pouvoir geler et débloquer un jeton, nous devons déjà avoir :
 En utilisant uniquement une instruction "brute" sans aucune abstraction, voici à quoi ressemble le gel d'un jeton :
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction

@@ -21,11 +21,11 @@ Avant de pouvoir déléguer ou révoquer un compte de jetons, nous devons déjà
 En utilisant uniquement une instruction "brute" sans aucune abstraction, voici à quoi ressemble l'approbation d'un jeton :
 
 ```ts
-const tokenAccount = Keypair.generate();
+const keypair = Keypair.generate();
 
 const tokenAccount = await getAssociatedTokenAddress(
     mint.publicKey,
-    tokenAccount.publicKey,
+    keypair.publicKey,
 );
 
 // Create ATA creation instruction
